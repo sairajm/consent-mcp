@@ -1,0 +1,22 @@
+# Docker Compose for Testing
+# Provides PostgreSQL for running tests locally
+
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: consent-mcp-postgres-test
+    environment:
+      POSTGRES_USER: consent_test
+      POSTGRES_PASSWORD: consent_test
+      POSTGRES_DB: consent_test_db
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U consent_test -d consent_test_db" ]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    tmpfs:
+      - /var/lib/postgresql/data # Use tmpfs for faster tests

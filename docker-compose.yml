@@ -1,0 +1,85 @@
+# Consent MCP Docker Compose
+# Complete deployment stack with PostgreSQL
+
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: consent-mcp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: consent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-consent_secret}
+      POSTGRES_DB: consent_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U consent -d consent_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Database Migrations
+  # ============================================
+  migrations:
+    build:
+      context: .
+      target: production
+    container_name: consent-mcp-migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://consent:${POSTGRES_PASSWORD:-consent_secret}@postgres:5432/consent_db
+    command: >
+      sh -c "pip install alembic asyncpg && alembic upgrade head"
+    restart: "no"
+
+  # ============================================
+  # Consent MCP Server
+  # ============================================
+  consent-mcp:
+    build:
+      context: .
+      target: production
+    container_name: consent-mcp-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    environment:
+      # Environment
+      ENV: ${ENV:-production}
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://consent:${POSTGRES_PASSWORD:-consent_secret}@postgres:5432/consent_db
+
+      # Authentication
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-api_key}
+      API_KEYS: ${API_KEYS:-}
+      OAUTH_ISSUER_URL: ${OAUTH_ISSUER_URL:-}
+      OAUTH_AUDIENCE: ${OAUTH_AUDIENCE:-}
+
+      # Twilio (optional)
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
+
+      # SendGrid (optional)
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-}
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:
+    driver: local
