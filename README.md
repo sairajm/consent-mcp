@@ -47,23 +47,28 @@ docker-compose up --build
 
 ### Local Development
 
-```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+### Local Development (Recommended)
+This workflow runs PostgreSQL in Docker but executes the Python server locally on your machine for fast iteration.
 
-# Install with dev dependencies
-pip install -e ".[dev]"
+1.  **Windows**:
+    ```powershell
+    .\scripts\start_local.ps1
+    ```
 
-# Start PostgreSQL (via Docker)
-docker-compose -f docker-compose.test.yml up -d
+2.  **Linux/Mac**:
+    ```bash
+    chmod +x scripts/start_local.sh
+    ./scripts/start_local.sh
+    ```
 
-# Run migrations
-alembic upgrade head
+This script will:
+- Check for `.env` (copying from `.env.example` if needed).
+- Start a specific local Postgres container (`consent-mcp-postgres-dev`).
+- Wait for the database to be ready.
+- Run database migrations.
+- Start the MCP server with the local environment configuration.
 
-# Run the server
-python -m consent_mcp.mcp.v1.server
-```
+> **Note**: For manual setup, see `.github/workflows/ci.yml`.
 
 ## 🔧 Configuration
 

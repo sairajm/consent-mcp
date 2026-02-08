@@ -24,7 +24,7 @@ def get_async_engine() -> AsyncEngine:
     if _engine is None:
         _engine = create_async_engine(
             settings.database_url,
-            echo=not settings.is_production,
+            echo=settings.echo_sql,
             pool_size=5,
             max_overflow=10,
             pool_pre_ping=True,

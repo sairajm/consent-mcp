@@ -28,35 +28,36 @@ class ApiKeyAuthProvider(IAuthProvider):
 
     def extract_credentials(self, request: dict[str, Any]) -> dict[str, Any]:
         """
-        Extract API key from request.
+        Extract credentials from the request.
 
-        Looks for the API key in:
-        1. request._meta.api_key
-        2. request.params._meta.api_key (for tool calls)
+        Supports multiple sources:
+        1. HTTP Authorization header (Bearer token) - for SSE/HTTP transport
+        2. MCP_BOOTSTRAP_KEY environment variable - for session-level auth
+        3. Legacy _meta.api_key - for backward compatibility
 
         Args:
-            request: The MCP request dictionary.
+            request: Request dictionary containing headers or metadata
 
         Returns:
-            Dict with extracted api_key if found.
+            Dictionary with extracted credentials
         """
-        # Try _meta at top level
-        meta = request.get("_meta", {})
-        if api_key := meta.get("api_key"):
-            return {"api_key": api_key}
+        # Priority 1: HTTP Authorization header (SSE/HTTP transport)
+        if auth_header := request.get("authorization", ""):
+            # Extract Bearer token
+            if auth_header.lower().startswith("bearer "):
+                api_key = auth_header[7:].strip()  # Remove "bearer " prefix
+                return {"api_key": api_key}
+        
+        # Priority 2: Legacy _meta field
+        if "_meta" in request:
+            params = request.get("_meta", {})
+            if api_key := params.get("api_key"):
+                return {"api_key": api_key}
 
-        # Try params._meta for tool calls
-        params = request.get("params", {})
-        params_meta = params.get("_meta", {})
-        if api_key := params_meta.get("api_key"):
-            return {"api_key": api_key}
-
-        # Try authorization header style
-        if api_key := request.get("authorization"):
-            # Handle "Bearer sk_xxx" format
-            if api_key.startswith("Bearer "):
-                api_key = api_key[7:]
-            return {"api_key": api_key}
+        # Priority 3: Bootstrap key from environment (for backward compatibility)
+        import os
+        if bootstrap_key := os.environ.get("MCP_BOOTSTRAP_KEY"):
+             return {"api_key": bootstrap_key}
 
         return {}
 
@@ -71,10 +72,12 @@ class ApiKeyAuthProvider(IAuthProvider):
             AuthContext if valid key, None otherwise.
         """
         api_key = credentials.get("api_key")
+
         if not api_key:
-            return None
+            return 
 
         client_id = self._api_keys.get(api_key)
+
         if not client_id:
             return None
 

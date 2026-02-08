@@ -1,5 +1,6 @@
 """Configuration management for Consent MCP."""
 
+import os
 from functools import lru_cache
 from typing import Literal
 
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(f".env.{os.getenv('ENV', 'development')}", ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -91,6 +92,12 @@ class Settings(BaseSettings):
         description="Interval in seconds for SMS polling",
     )
 
+    # Logging/Debugging
+    sql_echo: bool | None = Field(
+        default=None,
+        description="Override SQL echo setting (defaults to True in dev/test)",
+    )
+
     @field_validator("auth_provider")
     @classmethod
     def validate_auth_provider(cls, v: str, _info) -> str:
@@ -141,6 +148,13 @@ class Settings(BaseSettings):
                 self.sendgrid_from_email,
             ]
         )
+
+    @property
+    def echo_sql(self) -> bool:
+        """Determine if SQL queries should be echoed."""
+        if self.sql_echo is not None:
+            return self.sql_echo
+        return not self.is_production
 
 
 @lru_cache

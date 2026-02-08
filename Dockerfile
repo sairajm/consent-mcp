@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
+COPY src ./src
 RUN pip install --no-cache-dir build && \
     pip wheel --no-cache-dir --wheel-dir /wheels .
 
@@ -42,8 +43,11 @@ RUN pip install --no-cache-dir /wheels/*.whl && \
     rm -rf /wheels
 
 # Copy application code
-COPY alembic.ini ./
+
+# Copy application code
+COPY alembic.ini .
 COPY alembic ./alembic
+COPY scripts/prestart.py ./scripts/prestart.py
 COPY src ./src
 
 # Change ownership to non-root user
@@ -61,4 +65,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "print('healthy')" || exit 1
 
 # Default command
-CMD ["python", "-m", "consent_mcp.mcp.v1.server"]
+CMD ["sh", "-c", "python scripts/prestart.py && python -m consent_mcp.mcp.v1.server"]

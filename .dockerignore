@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Environment Variables (CRITICAL: Do not include in image)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv
+env/
+venv/
+ENV/
+
+# IDEs
+.idea
+.vscode
+*.swp
+*.swo
+
+# Testing / Coverage
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local Dev Data
+*.sqlite3
+*.db
+docker-compose.dev.yml
+scripts/start_local.ps1
+scripts/start_local.sh

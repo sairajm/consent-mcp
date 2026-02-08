@@ -1,8 +1,6 @@
 # Consent MCP Docker Compose
 # Complete deployment stack with PostgreSQL
 
-version: '3.8'
-
 services:
   # ============================================
   # PostgreSQL Database
@@ -28,19 +26,7 @@ services:
   # ============================================
   # Database Migrations
   # ============================================
-  migrations:
-    build:
-      context: .
-      target: production
-    container_name: consent-mcp-migrations
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+asyncpg://consent:${POSTGRES_PASSWORD:-consent_secret}@postgres:5432/consent_db
-    command: >
-      sh -c "pip install alembic asyncpg && alembic upgrade head"
-    restart: "no"
+
 
   # ============================================
   # Consent MCP Server
@@ -54,18 +40,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
     environment:
       # Environment
-      ENV: ${ENV:-production}
+      ENV: ${ENV:-development}
 
       # Database
       DATABASE_URL: postgresql+asyncpg://consent:${POSTGRES_PASSWORD:-consent_secret}@postgres:5432/consent_db
 
       # Authentication
       AUTH_PROVIDER: ${AUTH_PROVIDER:-api_key}
-      API_KEYS: ${API_KEYS:-}
+      API_KEYS: ${API_KEYS:-dev_key:dev_client}
       OAUTH_ISSUER_URL: ${OAUTH_ISSUER_URL:-}
       OAUTH_AUDIENCE: ${OAUTH_AUDIENCE:-}
 

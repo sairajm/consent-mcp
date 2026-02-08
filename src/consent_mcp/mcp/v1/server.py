@@ -1,24 +1,15 @@
-"""MCP v1 Server implementation."""
+"""Shared MCP Server logic for consent management."""
 
-import asyncio
 import logging
 from typing import Any
 
 from mcp.server import Server
-from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
 from consent_mcp.config import settings
 from consent_mcp.domain.auth import IAuthProvider
 from consent_mcp.domain.services import ConsentService
 from consent_mcp.domain.value_objects import ContactInfo, ContactType
-from consent_mcp.infrastructure.auth import get_auth_provider
-from consent_mcp.infrastructure.database import (
-    PostgresConsentRepository,
-    get_async_session,
-    init_db,
-)
-from consent_mcp.infrastructure.providers import get_email_provider, get_sms_provider
 from consent_mcp.mcp.v1.requests import (
     AdminSimulateV1Request,
     CheckConsentEmailV1Request,
@@ -55,6 +46,7 @@ class ConsentMcpServer:
         self.service = consent_service
         self.auth = auth_provider
         self.server = Server("consent-mcp")
+        self._auth_header = ""  # Will be set by transport layer
         self._setup_tools()
 
     def _setup_tools(self) -> None:
@@ -117,6 +109,16 @@ class ConsentMcpServer:
         async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
             """Handle tool calls."""
             try:
+                ctx = self.server.request_context
+
+                headers = ctx.request.headers    
+                
+                credentials = self.auth.extract_credentials(headers)
+                auth_context = await self.auth.authenticate(credentials)
+                
+                if not auth_context:
+                    return [TextContent(type="text", text="Error: Unauthorized - Invalid or missing API key")]
+
                 if name == "request_consent_sms":
                     result = await self._request_consent_sms(arguments)
                 elif name == "request_consent_email":
@@ -157,7 +159,6 @@ class ConsentMcpServer:
             expires_in_days=req.expires_in_days,
         )
 
-        # Format response
         delivery = None
         if "delivery" in result:
             delivery = MessageDeliveryV1Response(**result["delivery"])
@@ -262,56 +263,3 @@ class ConsentMcpServer:
 
         response = AdminSimulateV1Response(**result)
         return response.model_dump(mode="json")
-
-    async def run(self) -> None:
-        """Run the MCP server."""
-        async with stdio_server() as (read_stream, write_stream):
-            await self.server.run(
-                read_stream,
-                write_stream,
-                self.server.create_initialization_options(),
-            )
-
-
-async def create_mcp_server() -> ConsentMcpServer:
-    """Create and configure the MCP server."""
-    # Initialize database
-    await init_db()
-
-    # Get auth provider
-    auth_provider = get_auth_provider()
-
-    # Get message providers
-    sms_provider = get_sms_provider()
-    email_provider = get_email_provider()
-
-    # Create repository (will use session per-request in production)
-    # For now, create a simple service
-    async with get_async_session() as session:
-        repository = PostgresConsentRepository(session)
-
-        consent_service = ConsentService(
-            repository=repository,
-            sms_provider=sms_provider,
-            email_provider=email_provider,
-        )
-
-        return ConsentMcpServer(
-            consent_service=consent_service,
-            auth_provider=auth_provider,
-        )
-
-
-def main() -> None:
-    """Entry point for the MCP server."""
-    logging.basicConfig(level=logging.INFO)
-
-    async def run():
-        server = await create_mcp_server()
-        await server.run()
-
-    asyncio.run(run())
-
-
-if __name__ == "__main__":
-    main()
