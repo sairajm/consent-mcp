@@ -42,11 +42,12 @@ class ApiKeyAuthProvider(IAuthProvider):
             Dictionary with extracted credentials
         """
         # Priority 1: HTTP Authorization header (SSE/HTTP transport)
-        if auth_header := request.get("authorization", ""):
+        auth_header = request.get("authorization", "")
+
+        if auth_header.lower().startswith("bearer "):
             # Extract Bearer token
-            if auth_header.lower().startswith("bearer "):
-                api_key = auth_header[7:].strip()  # Remove "bearer " prefix
-                return {"api_key": api_key}
+            api_key = auth_header[7:].strip()  # Remove "bearer " prefix
+            return {"api_key": api_key}
 
         # Priority 2: Legacy _meta field
         if "_meta" in request:

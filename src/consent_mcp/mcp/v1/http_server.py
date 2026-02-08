@@ -33,7 +33,7 @@ async def create_app() -> Starlette:
     db_session = None
 
     @asynccontextmanager
-    async def lifespan(app: Starlette):
+    async def lifespan(_: Starlette):
         """Manage the lifespan of the application and session manager."""
         nonlocal mcp_server, session_manager, db_session
 
