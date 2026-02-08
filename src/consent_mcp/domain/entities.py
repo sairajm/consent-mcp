@@ -1,6 +1,6 @@
 """Domain entities for consent management."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -34,23 +34,23 @@ class ConsentRequest(BaseModel):
     expires_at: datetime
 
     # Audit timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     responded_at: datetime | None = None
 
     def is_active(self) -> bool:
         """Check if consent is currently active (granted and not expired)."""
         if self.status != ConsentStatus.GRANTED:
             return False
-        return datetime.utcnow() < self.expires_at
+        return datetime.now(timezone.utc) < self.expires_at
 
     def is_expired(self) -> bool:
         """Check if consent has expired."""
-        return datetime.utcnow() >= self.expires_at
+        return datetime.now(timezone.utc) >= self.expires_at
 
     def grant(self) -> "ConsentRequest":
         """Grant the consent request."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return self.model_copy(
             update={
                 "status": ConsentStatus.GRANTED,
@@ -61,7 +61,7 @@ class ConsentRequest(BaseModel):
 
     def revoke(self) -> "ConsentRequest":
         """Revoke the consent request."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return self.model_copy(
             update={
                 "status": ConsentStatus.REVOKED,
@@ -75,7 +75,7 @@ class ConsentRequest(BaseModel):
         return self.model_copy(
             update={
                 "status": ConsentStatus.EXPIRED,
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(timezone.utc),
             }
         )
 
