@@ -1,6 +1,5 @@
 """HTML templates for consent pages."""
 
-
 from consent_mcp.domain.value_objects import ConsentStatus
 
 

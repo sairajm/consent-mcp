@@ -1,6 +1,6 @@
 """Tests for consent web endpoints."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -41,7 +41,7 @@ def sample_consent_request():
         ),
         scope="AI agent communication for customer support",
         status=ConsentStatus.PENDING,
-        expires_at=datetime.utcnow() + timedelta(days=7),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
     )
 
 

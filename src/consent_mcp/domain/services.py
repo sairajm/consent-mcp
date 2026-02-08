@@ -1,6 +1,6 @@
 """Domain services for consent management."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from consent_mcp.config import settings
 from consent_mcp.domain.entities import ConsentRequest
@@ -119,7 +119,7 @@ class ConsentService:
             }
 
         # Create new consent request
-        expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+        expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
         consent_request = ConsentRequest(
             requester=requester,
             target=target,

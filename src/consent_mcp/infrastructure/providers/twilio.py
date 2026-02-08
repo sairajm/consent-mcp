@@ -17,14 +17,18 @@ from consent_mcp.domain.providers import (
 E164_PATTERN = re.compile(r"^\+[1-9]\d{1,14}$")
 
 
+# Sentinel for unset values
+_UNSET = object()
+
+
 class TwilioMessageProvider(IMessageProvider):
     """Twilio SMS implementation of the message provider."""
 
     def __init__(
         self,
-        account_sid: str | None = None,
-        auth_token: str | None = None,
-        phone_number: str | None = None,
+        account_sid: str | None = _UNSET,
+        auth_token: str | None = _UNSET,
+        phone_number: str | None = _UNSET,
     ):
         """
         Initialize the Twilio provider.
@@ -34,9 +38,13 @@ class TwilioMessageProvider(IMessageProvider):
             auth_token: Twilio Auth Token. Defaults to settings.
             phone_number: Twilio phone number for sending. Defaults to settings.
         """
-        self._account_sid = account_sid or settings.twilio_account_sid
-        self._auth_token = auth_token or settings.twilio_auth_token
-        self._phone_number = phone_number or settings.twilio_phone_number
+        self._account_sid = (
+            account_sid if account_sid is not _UNSET else settings.twilio_account_sid
+        )
+        self._auth_token = auth_token if auth_token is not _UNSET else settings.twilio_auth_token
+        self._phone_number = (
+            phone_number if phone_number is not _UNSET else settings.twilio_phone_number
+        )
         self._client: Client | None = None
 
     @property

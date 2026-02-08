@@ -1,6 +1,6 @@
 """Tests for PostgresConsentRepository."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -22,7 +22,7 @@ class TestRepositoryCreate:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         saved = await repository.create(request)
@@ -39,7 +39,7 @@ class TestRepositoryCreate:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request1)
 
@@ -67,7 +67,7 @@ class TestRepositoryGetById:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -97,7 +97,7 @@ class TestRepositoryGetActiveConsent:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -119,7 +119,7 @@ class TestRepositoryGetActiveConsent:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.PENDING,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -140,7 +140,7 @@ class TestRepositoryGetActiveConsent:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() - timedelta(days=1),  # Expired
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),  # Expired
         )
         await repository.create(request)
 
@@ -161,7 +161,7 @@ class TestRepositoryGetActiveConsent:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.REVOKED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -185,7 +185,7 @@ class TestRepositoryUpdateStatus:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -213,7 +213,7 @@ class TestRepositoryFindMethods:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 
@@ -231,7 +231,7 @@ class TestRepositoryFindMethods:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
         await repository.create(request)
 

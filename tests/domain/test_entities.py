@@ -1,6 +1,6 @@
 """Tests for ConsentRequest domain entity."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from consent_mcp.domain.entities import ConsentRequest
 from consent_mcp.domain.value_objects import ConsentStatus
@@ -18,7 +18,7 @@ class TestConsentRequestIsActive:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         assert request.is_active() is True
@@ -30,7 +30,7 @@ class TestConsentRequestIsActive:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.PENDING,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         assert request.is_active() is False
@@ -42,7 +42,7 @@ class TestConsentRequestIsActive:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() - timedelta(days=1),
+            expires_at=datetime.now(timezone.utc) - timedelta(days=1),
         )
 
         assert request.is_active() is False
@@ -54,7 +54,7 @@ class TestConsentRequestIsActive:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.REVOKED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         assert request.is_active() is False
@@ -69,7 +69,7 @@ class TestConsentRequestStatusTransitions:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         granted = request.grant()
@@ -84,7 +84,7 @@ class TestConsentRequestStatusTransitions:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         revoked = request.revoke()
@@ -99,7 +99,7 @@ class TestConsentRequestStatusTransitions:
             target=sample_phone_target,
             scope="wellness_check",
             status=ConsentStatus.GRANTED,
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         expired = request.expire()
@@ -116,7 +116,7 @@ class TestConsentRequestCreation:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         assert request.status == ConsentStatus.PENDING
@@ -127,7 +127,7 @@ class TestConsentRequestCreation:
             requester=sample_phone_requester,
             target=sample_phone_target,
             scope="wellness_check",
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
         )
 
         assert request.id is not None

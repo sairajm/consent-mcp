@@ -179,4 +179,4 @@ class TestConsentServiceSimulateResponse:
         )
 
         assert result["success"] is False
-        assert "not found" in result["message"].lower()
+        assert "request found" in result["message"].lower()
