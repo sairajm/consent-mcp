@@ -1,6 +1,5 @@
 """HTML templates for consent pages."""
 
-from typing import Optional
 
 from consent_mcp.domain.value_objects import ConsentStatus
 
@@ -9,7 +8,7 @@ def render_consent_page(
     token: str,
     requester_name: str,
     scope: str,
-    target_name: Optional[str] = None,
+    target_name: str | None = None,
 ) -> str:
     """Render the consent confirmation page."""
     greeting = f"Hi {target_name}" if target_name else "Hello"

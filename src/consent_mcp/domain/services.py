@@ -384,4 +384,3 @@ class ConsentService:
             new_status=ConsentStatus.REVOKED,
             message="Consent denied",
         )
-

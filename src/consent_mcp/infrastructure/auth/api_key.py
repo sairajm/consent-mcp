@@ -47,7 +47,7 @@ class ApiKeyAuthProvider(IAuthProvider):
             if auth_header.lower().startswith("bearer "):
                 api_key = auth_header[7:].strip()  # Remove "bearer " prefix
                 return {"api_key": api_key}
-        
+
         # Priority 2: Legacy _meta field
         if "_meta" in request:
             params = request.get("_meta", {})
@@ -56,8 +56,9 @@ class ApiKeyAuthProvider(IAuthProvider):
 
         # Priority 3: Bootstrap key from environment (for backward compatibility)
         import os
+
         if bootstrap_key := os.environ.get("MCP_BOOTSTRAP_KEY"):
-             return {"api_key": bootstrap_key}
+            return {"api_key": bootstrap_key}
 
         return {}
 
@@ -74,7 +75,7 @@ class ApiKeyAuthProvider(IAuthProvider):
         api_key = credentials.get("api_key")
 
         if not api_key:
-            return 
+            return
 
         client_id = self._api_keys.get(api_key)
 

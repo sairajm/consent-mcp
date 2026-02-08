@@ -111,13 +111,17 @@ class ConsentMcpServer:
             try:
                 ctx = self.server.request_context
 
-                headers = ctx.request.headers    
-                
+                headers = ctx.request.headers
+
                 credentials = self.auth.extract_credentials(headers)
                 auth_context = await self.auth.authenticate(credentials)
-                
+
                 if not auth_context:
-                    return [TextContent(type="text", text="Error: Unauthorized - Invalid or missing API key")]
+                    return [
+                        TextContent(
+                            type="text", text="Error: Unauthorized - Invalid or missing API key"
+                        )
+                    ]
 
                 if name == "request_consent_sms":
                     result = await self._request_consent_sms(arguments)

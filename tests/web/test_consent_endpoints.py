@@ -1,20 +1,20 @@
 """Tests for consent web endpoints."""
 
 from datetime import datetime, timedelta
-from uuid import uuid4
 from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
 from consent_mcp.domain.entities import ConsentRequest
+from consent_mcp.domain.services import ConsentService
 from consent_mcp.domain.value_objects import (
     ConsentActionResult,
+    ConsentStatus,
     ContactInfo,
     ContactType,
-    ConsentStatus,
 )
-from consent_mcp.domain.services import ConsentService
 from consent_mcp.web.app import ConsentWebApp, create_app
 
 
@@ -75,9 +75,7 @@ class TestConsentPageDisplay:
         assert "Grant Consent" in response.text
         assert "Decline" in response.text
 
-    def test_shows_greeting_with_target_name(
-        self, client, mock_service, sample_consent_request
-    ):
+    def test_shows_greeting_with_target_name(self, client, mock_service, sample_consent_request):
         """Should greet the target by name if available."""
         mock_service.get_request_by_id = AsyncMock(return_value=sample_consent_request)
 
@@ -129,9 +127,7 @@ class TestConsentPageDisplay:
 class TestGrantConsent:
     """Tests for POST /v1/consent/{token}/grant endpoint."""
 
-    def test_grants_pending_request(
-        self, client, mock_service, sample_consent_request
-    ):
+    def test_grants_pending_request(self, client, mock_service, sample_consent_request):
         """Should grant consent for pending requests."""
         mock_service.grant_consent = AsyncMock(
             return_value=ConsentActionResult(
@@ -188,9 +184,7 @@ class TestGrantConsent:
 class TestDenyConsent:
     """Tests for POST /v1/consent/{token}/deny endpoint."""
 
-    def test_denies_pending_request(
-        self, client, mock_service, sample_consent_request
-    ):
+    def test_denies_pending_request(self, client, mock_service, sample_consent_request):
         """Should deny consent for pending requests."""
         mock_service.deny_consent = AsyncMock(
             return_value=ConsentActionResult(
