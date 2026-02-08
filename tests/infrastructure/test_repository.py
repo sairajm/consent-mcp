@@ -1,12 +1,13 @@
 """Tests for PostgresConsentRepository."""
 
-import pytest
 from datetime import datetime, timedelta
 from uuid import uuid4
 
+import pytest
+
 from consent_mcp.domain.entities import ConsentRequest
-from consent_mcp.domain.value_objects import ContactInfo, ContactType, ConsentStatus
 from consent_mcp.domain.repository import DuplicateRequestError, RequestNotFoundError
+from consent_mcp.domain.value_objects import ConsentStatus
 
 
 class TestRepositoryCreate:
@@ -188,9 +189,7 @@ class TestRepositoryUpdateStatus:
         )
         await repository.create(request)
 
-        updated = await repository.update_status(
-            request.id, ConsentStatus.GRANTED
-        )
+        updated = await repository.update_status(request.id, ConsentStatus.GRANTED)
 
         assert updated.status == ConsentStatus.GRANTED
         assert updated.responded_at is not None

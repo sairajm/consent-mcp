@@ -2,9 +2,9 @@
 
 import re
 
+from python_http_client.exceptions import HTTPError
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from python_http_client.exceptions import HTTPError
 
 from consent_mcp.config import settings
 from consent_mcp.domain.providers import (
@@ -13,7 +13,6 @@ from consent_mcp.domain.providers import (
     ProviderNotConfiguredError,
     ProviderType,
 )
-
 
 # Simple email validation pattern
 EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
@@ -29,7 +28,7 @@ class SendGridMessageProvider(IMessageProvider):
     ):
         """
         Initialize the SendGrid provider.
-        
+
         Args:
             api_key: SendGrid API key. Defaults to settings.
             from_email: Sender email address. Defaults to settings.
@@ -50,17 +49,18 @@ class SendGridMessageProvider(IMessageProvider):
 
     def is_configured(self) -> bool:
         """Check if SendGrid is properly configured."""
-        return all([
-            self._api_key,
-            self._from_email,
-        ])
+        return all(
+            [
+                self._api_key,
+                self._from_email,
+            ]
+        )
 
     def _get_client(self) -> SendGridAPIClient:
         """Get or create the SendGrid client."""
         if not self.is_configured():
             raise ProviderNotConfiguredError(
-                "SendGrid is not configured. Set SENDGRID_API_KEY "
-                "and SENDGRID_FROM_EMAIL."
+                "SendGrid is not configured. Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL."
             )
         if self._client is None:
             self._client = SendGridAPIClient(self._api_key)
@@ -83,22 +83,28 @@ class SendGridMessageProvider(IMessageProvider):
     ) -> str:
         """Format the consent request email body (HTML)."""
         greeting = f"Hi {target_name}" if target_name else "Hello"
-        
-        button_html = ""
+
         if consent_url:
-            button_html = f"""
-            <p style="margin-top: 20px;">
-                <a href="{consent_url}" 
-                   style="background-color: #4CAF50; color: white; padding: 14px 20px; 
-                          text-decoration: none; border-radius: 4px;">
-                    Grant Consent
+            action_html = f"""
+            <p style="margin-top: 24px; color: #333;">
+                <strong>Click the button below to review and grant consent:</strong>
+            </p>
+            <p style="margin-top: 16px;">
+                <a href="{consent_url}"
+                   style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                          color: white; padding: 14px 28px; text-decoration: none;
+                          border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    Review Consent Request
                 </a>
+            </p>
+            <p style="margin-top: 16px; color: #666; font-size: 14px;">
+                You'll be able to review the details before making your decision.
             </p>
             """
         else:
-            button_html = """
+            action_html = """
             <p style="margin-top: 20px; color: #666;">
-                Reply to this email with <strong>YES</strong> to grant consent 
+                Reply to this email with <strong>YES</strong> to grant consent
                 or <strong>NO</strong> to decline.
             </p>
             """
@@ -108,22 +114,33 @@ class SendGridMessageProvider(IMessageProvider):
         <html>
         <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="padding: 20px; background-color: #f9f9f9; border-radius: 8px;">
-                <h2 style="color: #333;">AI Agent Consent Request</h2>
-                <p>{greeting},</p>
-                <p><strong>{requester_name}</strong> is requesting permission for an AI agent 
-                   to contact you for the following purpose:</p>
-                <blockquote style="background-color: #fff; padding: 15px; 
-                                   border-left: 4px solid #4CAF50; margin: 20px 0;">
-                    {scope}
-                </blockquote>
-                {button_html}
-                <hr style="margin-top: 30px; border: none; border-top: 1px solid #ddd;">
-                <p style="color: #999; font-size: 12px;">
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+                     max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+            <div style="background-color: #ffffff; border-radius: 12px; padding: 32px;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <h1 style="color: #333; font-size: 24px; margin-bottom: 24px;">
+                    🔐 AI Agent Consent Request
+                </h1>
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                    {greeting},
+                </p>
+                <p style="color: #333; font-size: 16px; line-height: 1.6;">
+                    <strong>{requester_name}</strong> is requesting your permission for an AI agent
+                    to contact you for the following purpose:
+                </p>
+                <div style="background-color: #f8f9fa; border-left: 4px solid #667eea;
+                            padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                    <p style="margin: 0; color: #333; font-size: 16px; font-weight: 500;">
+                        {scope}
+                    </p>
+                </div>
+                {action_html}
+                <hr style="margin-top: 32px; border: none; border-top: 1px solid #eee;">
+                <p style="color: #999; font-size: 12px; margin-top: 16px;">
                     This is an automated consent request. If you did not expect this email,
-                    you can safely ignore it.
+                    you can safely ignore it. You can revoke consent at any time.
                 </p>
             </div>
         </body>
@@ -167,21 +184,17 @@ class SendGridMessageProvider(IMessageProvider):
             from_email=self._from_email,
             to_emails=target_contact,
             subject=self._format_subject(requester_name),
-            html_content=self._format_html_body(
-                requester_name, target_name, scope, consent_url
-            ),
-            plain_text_content=self._format_plain_body(
-                requester_name, target_name, scope
-            ),
+            html_content=self._format_html_body(requester_name, target_name, scope, consent_url),
+            plain_text_content=self._format_plain_body(requester_name, target_name, scope),
         )
 
         try:
             client = self._get_client()
             response = client.send(message)
-            
+
             # Extract message ID from response headers
             message_id = response.headers.get("X-Message-Id", None)
-            
+
             return MessageDeliveryResult(
                 success=True,
                 provider=self.provider_name,

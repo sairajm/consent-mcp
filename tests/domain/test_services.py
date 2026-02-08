@@ -2,8 +2,6 @@
 
 import pytest
 
-from consent_mcp.domain.services import ConsentService
-
 
 class TestConsentServiceRequestConsent:
     """Tests for ConsentService.request_consent method."""
@@ -23,7 +21,7 @@ class TestConsentServiceRequestConsent:
         assert result["status"] == "pending"
         assert result["request_id"] is not None
         assert "expires_at" in result
-        
+
         # Verify SMS was sent
         mock_sms_provider.send_consent_request.assert_called_once()
 
@@ -41,7 +39,7 @@ class TestConsentServiceRequestConsent:
 
         assert result["status"] == "pending"
         assert result["request_id"] is not None
-        
+
         # Verify email was sent
         mock_email_provider.send_consent_request.assert_called_once()
 

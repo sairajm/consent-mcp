@@ -2,18 +2,16 @@
 
 import re
 
-from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
 
 from consent_mcp.config import settings
 from consent_mcp.domain.providers import (
     IMessageProvider,
-    MessageDeliveryError,
     MessageDeliveryResult,
     ProviderNotConfiguredError,
     ProviderType,
 )
-
 
 # E.164 phone number pattern
 E164_PATTERN = re.compile(r"^\+[1-9]\d{1,14}$")
@@ -30,7 +28,7 @@ class TwilioMessageProvider(IMessageProvider):
     ):
         """
         Initialize the Twilio provider.
-        
+
         Args:
             account_sid: Twilio Account SID. Defaults to settings.
             auth_token: Twilio Auth Token. Defaults to settings.
@@ -53,11 +51,13 @@ class TwilioMessageProvider(IMessageProvider):
 
     def is_configured(self) -> bool:
         """Check if Twilio is properly configured."""
-        return all([
-            self._account_sid,
-            self._auth_token,
-            self._phone_number,
-        ])
+        return all(
+            [
+                self._account_sid,
+                self._auth_token,
+                self._phone_number,
+            ]
+        )
 
     def _get_client(self) -> Client:
         """Get or create the Twilio client."""
@@ -83,15 +83,17 @@ class TwilioMessageProvider(IMessageProvider):
     ) -> str:
         """Format the consent request SMS message."""
         greeting = f"Hi {target_name}" if target_name else "Hi"
-        base_message = (
-            f"{greeting}, {requester_name} is requesting permission for an AI agent "
-            f"to contact you for: {scope}."
-        )
-        
+
         if consent_url:
-            return f"{base_message} Respond here: {consent_url}"
+            return (
+                f"{greeting}, {requester_name} requests AI agent consent for: {scope}. "
+                f"Click to grant consent: {consent_url}"
+            )
         else:
-            return f"{base_message} Reply YES to grant consent or NO to decline."
+            return (
+                f"{greeting}, {requester_name} is requesting AI agent consent for: {scope}. "
+                f"Reply YES to grant or NO to decline."
+            )
 
     async def send_consent_request(
         self,
@@ -110,7 +112,7 @@ class TwilioMessageProvider(IMessageProvider):
             )
 
         message_body = self._format_message(requester_name, target_name, scope, consent_url)
-        
+
         try:
             client = self._get_client()
             message = client.messages.create(

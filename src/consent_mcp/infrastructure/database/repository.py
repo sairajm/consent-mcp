@@ -13,7 +13,7 @@ from consent_mcp.domain.repository import (
     IConsentRepository,
     RequestNotFoundError,
 )
-from consent_mcp.domain.value_objects import ContactInfo, ContactType, ConsentStatus
+from consent_mcp.domain.value_objects import ConsentStatus, ContactInfo, ContactType
 from consent_mcp.infrastructure.database.models import ConsentRequestModel
 
 
@@ -74,7 +74,7 @@ class PostgresConsentRepository(IConsentRepository):
             await self._session.rollback()
             raise DuplicateRequestError(
                 f"Consent request already exists for this requester+target+scope: {e}"
-            )
+            ) from e
         return self._model_to_entity(model)
 
     async def get_by_id(self, request_id: UUID) -> ConsentRequest | None:
@@ -104,9 +104,7 @@ class PostgresConsentRepository(IConsentRepository):
         if scope:
             conditions.append(ConsentRequestModel.scope == scope)
 
-        result = await self._session.execute(
-            select(ConsentRequestModel).where(and_(*conditions))
-        )
+        result = await self._session.execute(select(ConsentRequestModel).where(and_(*conditions)))
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
@@ -120,10 +118,8 @@ class PostgresConsentRepository(IConsentRepository):
         result = await self._session.execute(
             select(ConsentRequestModel).where(
                 and_(
-                    ConsentRequestModel.requester_contact_type
-                    == requester.contact_type.value,
-                    ConsentRequestModel.requester_contact_value
-                    == requester.contact_value,
+                    ConsentRequestModel.requester_contact_type == requester.contact_type.value,
+                    ConsentRequestModel.requester_contact_value == requester.contact_value,
                     ConsentRequestModel.target_contact_type == target.contact_type.value,
                     ConsentRequestModel.target_contact_value == target.contact_value,
                     ConsentRequestModel.scope == scope,
@@ -147,7 +143,9 @@ class PostgresConsentRepository(IConsentRepository):
             .values(
                 status=status.value,
                 updated_at=now,
-                responded_at=now if status in (ConsentStatus.GRANTED, ConsentStatus.REVOKED) else None,
+                responded_at=now
+                if status in (ConsentStatus.GRANTED, ConsentStatus.REVOKED)
+                else None,
             )
             .returning(ConsentRequestModel)
         )
@@ -169,9 +167,7 @@ class PostgresConsentRepository(IConsentRepository):
         if status:
             conditions.append(ConsentRequestModel.status == status.value)
 
-        result = await self._session.execute(
-            select(ConsentRequestModel).where(and_(*conditions))
-        )
+        result = await self._session.execute(select(ConsentRequestModel).where(and_(*conditions)))
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
@@ -188,9 +184,7 @@ class PostgresConsentRepository(IConsentRepository):
         if status:
             conditions.append(ConsentRequestModel.status == status.value)
 
-        result = await self._session.execute(
-            select(ConsentRequestModel).where(and_(*conditions))
-        )
+        result = await self._session.execute(select(ConsentRequestModel).where(and_(*conditions)))
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 
@@ -201,10 +195,12 @@ class PostgresConsentRepository(IConsentRepository):
             update(ConsentRequestModel)
             .where(
                 and_(
-                    ConsentRequestModel.status.in_([
-                        ConsentStatus.PENDING.value,
-                        ConsentStatus.GRANTED.value,
-                    ]),
+                    ConsentRequestModel.status.in_(
+                        [
+                            ConsentStatus.PENDING.value,
+                            ConsentStatus.GRANTED.value,
+                        ]
+                    ),
                     ConsentRequestModel.expires_at <= now,
                 )
             )

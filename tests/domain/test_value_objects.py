@@ -3,9 +3,9 @@
 import pytest
 
 from consent_mcp.domain.value_objects import (
+    ConsentStatus,
     ContactInfo,
     ContactType,
-    ConsentStatus,
 )
 
 

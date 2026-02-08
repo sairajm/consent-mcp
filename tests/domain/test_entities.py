@@ -1,6 +1,5 @@
 """Tests for ConsentRequest domain entity."""
 
-import pytest
 from datetime import datetime, timedelta
 
 from consent_mcp.domain.entities import ConsentRequest
@@ -24,9 +23,7 @@ class TestConsentRequestIsActive:
 
         assert request.is_active() is True
 
-    def test_is_active_returns_false_for_pending(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_is_active_returns_false_for_pending(self, sample_phone_requester, sample_phone_target):
         """Test is_active returns False for pending consent."""
         request = ConsentRequest(
             requester=sample_phone_requester,
@@ -38,9 +35,7 @@ class TestConsentRequestIsActive:
 
         assert request.is_active() is False
 
-    def test_is_active_returns_false_for_expired(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_is_active_returns_false_for_expired(self, sample_phone_requester, sample_phone_target):
         """Test is_active returns False for expired consent."""
         request = ConsentRequest(
             requester=sample_phone_requester,
@@ -52,9 +47,7 @@ class TestConsentRequestIsActive:
 
         assert request.is_active() is False
 
-    def test_is_active_returns_false_for_revoked(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_is_active_returns_false_for_revoked(self, sample_phone_requester, sample_phone_target):
         """Test is_active returns False for revoked consent."""
         request = ConsentRequest(
             requester=sample_phone_requester,
@@ -117,9 +110,7 @@ class TestConsentRequestStatusTransitions:
 class TestConsentRequestCreation:
     """Tests for ConsentRequest entity creation."""
 
-    def test_default_status_is_pending(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_default_status_is_pending(self, sample_phone_requester, sample_phone_target):
         """Test that new ConsentRequest defaults to PENDING status."""
         request = ConsentRequest(
             requester=sample_phone_requester,
@@ -130,9 +121,7 @@ class TestConsentRequestCreation:
 
         assert request.status == ConsentStatus.PENDING
 
-    def test_id_is_generated_automatically(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_id_is_generated_automatically(self, sample_phone_requester, sample_phone_target):
         """Test that ConsentRequest generates a UUID automatically."""
         request = ConsentRequest(
             requester=sample_phone_requester,
@@ -143,9 +132,7 @@ class TestConsentRequestCreation:
 
         assert request.id is not None
 
-    def test_created_at_is_set_automatically(
-        self, sample_phone_requester, sample_phone_target
-    ):
+    def test_created_at_is_set_automatically(self, sample_phone_requester, sample_phone_target):
         """Test that created_at is set automatically."""
         request = ConsentRequest(
             requester=sample_phone_requester,

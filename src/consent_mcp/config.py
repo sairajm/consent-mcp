@@ -71,9 +71,29 @@ class Settings(BaseSettings):
         description="SendGrid sender email address",
     )
 
+    # Consent Web Endpoints
+    consent_base_url: str | None = Field(
+        default=None,
+        description="Base URL for consent links (e.g., https://consent.example.com)",
+    )
+    web_server_port: int = Field(
+        default=8080,
+        description="Port for the consent web server",
+    )
+
+    # SMS Polling (optional alternative to webhooks)
+    sms_polling_enabled: bool = Field(
+        default=False,
+        description="Enable polling Twilio for SMS replies",
+    )
+    sms_polling_interval: int = Field(
+        default=60,
+        description="Interval in seconds for SMS polling",
+    )
+
     @field_validator("auth_provider")
     @classmethod
-    def validate_auth_provider(cls, v: str, info) -> str:
+    def validate_auth_provider(cls, v: str, _info) -> str:
         """Ensure 'none' auth is only used in test environment."""
         # Note: We can't access other fields in field_validator easily,
         # so we do runtime check in the auth factory
@@ -104,19 +124,23 @@ class Settings(BaseSettings):
     @property
     def twilio_configured(self) -> bool:
         """Check if Twilio is fully configured."""
-        return all([
-            self.twilio_account_sid,
-            self.twilio_auth_token,
-            self.twilio_phone_number,
-        ])
+        return all(
+            [
+                self.twilio_account_sid,
+                self.twilio_auth_token,
+                self.twilio_phone_number,
+            ]
+        )
 
     @property
     def sendgrid_configured(self) -> bool:
         """Check if SendGrid is fully configured."""
-        return all([
-            self.sendgrid_api_key,
-            self.sendgrid_from_email,
-        ])
+        return all(
+            [
+                self.sendgrid_api_key,
+                self.sendgrid_from_email,
+            ]
+        )
 
 
 @lru_cache

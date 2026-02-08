@@ -1,7 +1,6 @@
 """V1 Response schemas for MCP tools."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -11,7 +10,7 @@ class MessageDeliveryV1Response(BaseModel):
 
     success: bool
     provider: str
-    message_id: Optional[str] = None
+    message_id: str | None = None
 
 
 class ConsentRequestV1Response(BaseModel):
@@ -21,22 +20,22 @@ class ConsentRequestV1Response(BaseModel):
     status: str  # 'pending', 'already_granted'
     message: str
     expires_at: datetime
-    delivery: Optional[MessageDeliveryV1Response] = None
+    delivery: MessageDeliveryV1Response | None = None
 
 
 class ConsentCheckV1Response(BaseModel):
     """V1: Consent check result."""
 
     has_consent: bool
-    status: Optional[str] = None
-    expires_at: Optional[datetime] = None
+    status: str | None = None
+    expires_at: datetime | None = None
 
 
 class AdminSimulateV1Response(BaseModel):
     """V1: Admin simulation result."""
 
     success: bool
-    new_status: Optional[str] = None
+    new_status: str | None = None
     message: str
 
 

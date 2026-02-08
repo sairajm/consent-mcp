@@ -5,34 +5,34 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from consent_mcp.domain.value_objects import ContactInfo, ConsentStatus
+from consent_mcp.domain.value_objects import ConsentStatus, ContactInfo
 
 
 class ConsentRequest(BaseModel):
     """
     Core domain entity representing a consent request.
-    
+
     A consent request tracks the permission granted (or pending) from a target
     to a requester for a specific scope of interaction.
     """
 
     id: UUID = Field(default_factory=uuid4)
-    
+
     # Who is requesting consent
     requester: ContactInfo
-    
+
     # Who is being asked for consent
     target: ContactInfo
-    
+
     # What the consent is for (free-form description)
     scope: str
-    
+
     # Current status of the request
     status: ConsentStatus = ConsentStatus.PENDING
-    
+
     # When the consent expires
     expires_at: datetime
-    
+
     # Audit timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

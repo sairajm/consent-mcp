@@ -6,34 +6,33 @@ from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import TextContent, Tool
 
 from consent_mcp.config import settings
-from consent_mcp.domain.auth import AuthenticationError, IAuthProvider
+from consent_mcp.domain.auth import IAuthProvider
 from consent_mcp.domain.services import ConsentService
 from consent_mcp.domain.value_objects import ContactInfo, ContactType
+from consent_mcp.infrastructure.auth import get_auth_provider
 from consent_mcp.infrastructure.database import (
+    PostgresConsentRepository,
     get_async_session,
     init_db,
-    PostgresConsentRepository,
 )
-from consent_mcp.infrastructure.providers import get_sms_provider, get_email_provider
-from consent_mcp.infrastructure.auth import get_auth_provider
+from consent_mcp.infrastructure.providers import get_email_provider, get_sms_provider
 from consent_mcp.mcp.v1.requests import (
-    RequestConsentSmsV1Request,
-    RequestConsentEmailV1Request,
-    CheckConsentSmsV1Request,
-    CheckConsentEmailV1Request,
     AdminSimulateV1Request,
+    CheckConsentEmailV1Request,
+    CheckConsentSmsV1Request,
+    RequestConsentEmailV1Request,
+    RequestConsentSmsV1Request,
 )
 from consent_mcp.mcp.v1.responses import (
-    ConsentRequestV1Response,
-    ConsentCheckV1Response,
     AdminSimulateV1Response,
+    ConsentCheckV1Response,
+    ConsentRequestV1Response,
     MessageDeliveryV1Response,
 )
 from consent_mcp.utils.schema_utils import pydantic_to_input_schema
-
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,7 @@ class ConsentMcpServer:
     ):
         """
         Initialize the MCP server.
-        
+
         Args:
             consent_service: Domain service for consent operations.
             auth_provider: Authentication provider.
@@ -60,7 +59,7 @@ class ConsentMcpServer:
 
     def _setup_tools(self) -> None:
         """Register MCP tools."""
-        
+
         @self.server.list_tools()
         async def list_tools() -> list[Tool]:
             """List available tools."""
@@ -130,7 +129,7 @@ class ConsentMcpServer:
                     result = await self._admin_simulate_response(arguments)
                 else:
                     result = {"error": f"Unknown tool: {name}"}
-                
+
                 return [TextContent(type="text", text=str(result))]
             except Exception as e:
                 logger.exception(f"Error in tool {name}")
@@ -139,7 +138,7 @@ class ConsentMcpServer:
     async def _request_consent_sms(self, args: dict) -> dict:
         """Handle request_consent_sms tool."""
         req = RequestConsentSmsV1Request(**args)
-        
+
         requester = ContactInfo(
             contact_type=ContactType.PHONE,
             contact_value=req.requester_phone,
@@ -175,7 +174,7 @@ class ConsentMcpServer:
     async def _request_consent_email(self, args: dict) -> dict:
         """Handle request_consent_email tool."""
         req = RequestConsentEmailV1Request(**args)
-        
+
         requester = ContactInfo(
             contact_type=ContactType.EMAIL,
             contact_value=req.requester_email,
@@ -210,7 +209,7 @@ class ConsentMcpServer:
     async def _check_consent_sms(self, args: dict) -> dict:
         """Handle check_consent_sms tool."""
         req = CheckConsentSmsV1Request(**args)
-        
+
         requester = ContactInfo(
             contact_type=ContactType.PHONE,
             contact_value=req.requester_phone,
@@ -221,14 +220,14 @@ class ConsentMcpServer:
         )
 
         has_consent = await self.service.check_consent(requester, target)
-        
+
         response = ConsentCheckV1Response(has_consent=has_consent)
         return response.model_dump(mode="json")
 
     async def _check_consent_email(self, args: dict) -> dict:
         """Handle check_consent_email tool."""
         req = CheckConsentEmailV1Request(**args)
-        
+
         requester = ContactInfo(
             contact_type=ContactType.EMAIL,
             contact_value=req.requester_email,
@@ -239,7 +238,7 @@ class ConsentMcpServer:
         )
 
         has_consent = await self.service.check_consent(requester, target)
-        
+
         response = ConsentCheckV1Response(has_consent=has_consent)
         return response.model_dump(mode="json")
 
@@ -249,7 +248,7 @@ class ConsentMcpServer:
             raise PermissionError("Admin tools only available in TEST environment")
 
         req = AdminSimulateV1Request(**args)
-        
+
         target = ContactInfo(
             contact_type=ContactType(req.target_contact_type),
             contact_value=req.target_contact_value,
@@ -290,7 +289,7 @@ async def create_mcp_server() -> ConsentMcpServer:
     # For now, create a simple service
     async with get_async_session() as session:
         repository = PostgresConsentRepository(session)
-        
+
         consent_service = ConsentService(
             repository=repository,
             sms_provider=sms_provider,
@@ -306,11 +305,11 @@ async def create_mcp_server() -> ConsentMcpServer:
 def main() -> None:
     """Entry point for the MCP server."""
     logging.basicConfig(level=logging.INFO)
-    
+
     async def run():
         server = await create_mcp_server()
         await server.run()
-    
+
     asyncio.run(run())
 
 

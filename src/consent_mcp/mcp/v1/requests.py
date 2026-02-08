@@ -1,10 +1,9 @@
 """V1 Request schemas for MCP tools."""
 
 import re
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 
 # E.164 phone pattern
 E164_PATTERN = re.compile(r"^\+[1-9]\d{1,14}$")
@@ -26,7 +25,7 @@ class RequestConsentSmsV1Request(BaseModel):
         Field(description="Target's phone in E.164 format"),
     ]
     target_name: Annotated[
-        Optional[str],
+        str | None,
         Field(default=None, description="Display name of the target (optional)"),
     ]
     scope: Annotated[
@@ -43,9 +42,7 @@ class RequestConsentSmsV1Request(BaseModel):
     def validate_phone(cls, v: str) -> str:
         """Validate phone number is in E.164 format."""
         if not E164_PATTERN.match(v):
-            raise ValueError(
-                f"Phone number must be in E.164 format (e.g., +15551234567), got: {v}"
-            )
+            raise ValueError(f"Phone number must be in E.164 format (e.g., +15551234567), got: {v}")
         return v
 
     @field_validator("expires_in_days")
@@ -75,7 +72,7 @@ class RequestConsentEmailV1Request(BaseModel):
         Field(description="Target's email address"),
     ]
     target_name: Annotated[
-        Optional[str],
+        str | None,
         Field(default=None, description="Display name of the target (optional)"),
     ]
     scope: Annotated[
@@ -115,9 +112,7 @@ class CheckConsentSmsV1Request(BaseModel):
     def validate_phone(cls, v: str) -> str:
         """Validate phone number is in E.164 format."""
         if not E164_PATTERN.match(v):
-            raise ValueError(
-                f"Phone number must be in E.164 format (e.g., +15551234567), got: {v}"
-            )
+            raise ValueError(f"Phone number must be in E.164 format (e.g., +15551234567), got: {v}")
         return v
 
 

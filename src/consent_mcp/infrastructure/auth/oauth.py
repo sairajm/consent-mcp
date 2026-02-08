@@ -12,7 +12,7 @@ from consent_mcp.domain.auth import AuthContext, IAuthProvider
 class OAuthProvider(IAuthProvider):
     """
     OAuth 2.0 / JWT token authentication.
-    
+
     Validates JWT tokens against a configured issuer using JWKS.
     """
 
@@ -24,7 +24,7 @@ class OAuthProvider(IAuthProvider):
     ):
         """
         Initialize the OAuth provider.
-        
+
         Args:
             issuer_url: The OAuth issuer URL (e.g., https://auth.example.com).
             audience: Expected audience claim in the JWT.
@@ -55,14 +55,14 @@ class OAuthProvider(IAuthProvider):
     def extract_credentials(self, request: dict[str, Any]) -> dict[str, Any]:
         """
         Extract bearer token from request.
-        
+
         Looks for:
         1. request.authorization header
         2. request._meta.bearer_token
-        
+
         Args:
             request: The MCP request dictionary.
-            
+
         Returns:
             Dict with extracted bearer_token if found.
         """
@@ -88,10 +88,10 @@ class OAuthProvider(IAuthProvider):
     async def authenticate(self, credentials: dict[str, Any]) -> AuthContext | None:
         """
         Authenticate using JWT token.
-        
+
         Args:
             credentials: Dict containing 'bearer_token'.
-            
+
         Returns:
             AuthContext if valid token, None otherwise.
         """
@@ -106,7 +106,7 @@ class OAuthProvider(IAuthProvider):
             # Decode and verify the token
             # Note: In production, you'd want to cache the signing key
             unverified_header = jwt.get_unverified_header(token)
-            
+
             # Find the matching key
             rsa_key = None
             for key in jwks.get("keys", []):
@@ -140,6 +140,6 @@ class OAuthProvider(IAuthProvider):
                 },
             )
 
-        except (JWTError, JWTClaimsError, httpx.HTTPError) as e:
+        except (JWTError, JWTClaimsError, httpx.HTTPError):
             # Log the error in production
             return None

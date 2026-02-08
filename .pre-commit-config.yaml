@@ -10,13 +10,8 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  # Detect secrets
-  - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
-    hooks:
-      - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
-        exclude: package.lock.json
+  # Note: Secret detection is handled in CI via TruffleHog
+  # (see .github/workflows/ci.yml)
 
   # General code quality
   - repo: https://github.com/pre-commit/pre-commit-hooks

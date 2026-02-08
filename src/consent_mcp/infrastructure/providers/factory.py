@@ -2,14 +2,14 @@
 
 from consent_mcp.config import settings
 from consent_mcp.domain.providers import IMessageProvider
-from consent_mcp.infrastructure.providers.twilio import TwilioMessageProvider
 from consent_mcp.infrastructure.providers.sendgrid import SendGridMessageProvider
+from consent_mcp.infrastructure.providers.twilio import TwilioMessageProvider
 
 
 def get_sms_provider() -> IMessageProvider | None:
     """
     Get the configured SMS provider.
-    
+
     Returns:
         TwilioMessageProvider if configured, None otherwise.
     """
@@ -21,7 +21,7 @@ def get_sms_provider() -> IMessageProvider | None:
 def get_email_provider() -> IMessageProvider | None:
     """
     Get the configured email provider.
-    
+
     Returns:
         SendGridMessageProvider if configured, None otherwise.
     """

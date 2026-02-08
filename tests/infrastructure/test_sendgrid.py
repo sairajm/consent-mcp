@@ -1,10 +1,11 @@
 """Tests for SendGridMessageProvider."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
-from consent_mcp.infrastructure.providers.sendgrid import SendGridMessageProvider
+import pytest
+
 from consent_mcp.domain.providers import ProviderType
+from consent_mcp.infrastructure.providers.sendgrid import SendGridMessageProvider
 
 
 class TestSendGridProviderConfiguration:
@@ -163,7 +164,7 @@ class TestSendGridEmailFormatting:
     def test_format_html_body_includes_requester(self):
         """Test HTML body includes requester name."""
         provider = SendGridMessageProvider()
-        
+
         body = provider._format_html_body(
             requester_name="Alice",
             target_name="Bob",
@@ -176,7 +177,7 @@ class TestSendGridEmailFormatting:
     def test_format_html_body_includes_scope(self):
         """Test HTML body includes scope."""
         provider = SendGridMessageProvider()
-        
+
         body = provider._format_html_body(
             requester_name="Alice",
             target_name="Bob",
@@ -189,7 +190,7 @@ class TestSendGridEmailFormatting:
     def test_format_html_body_includes_target_name(self):
         """Test HTML body includes target name."""
         provider = SendGridMessageProvider()
-        
+
         body = provider._format_html_body(
             requester_name="Alice",
             target_name="Bob",
@@ -202,7 +203,7 @@ class TestSendGridEmailFormatting:
     def test_format_html_body_includes_consent_url(self):
         """Test HTML body includes consent URL when provided."""
         provider = SendGridMessageProvider()
-        
+
         body = provider._format_html_body(
             requester_name="Alice",
             target_name="Bob",
@@ -215,6 +216,6 @@ class TestSendGridEmailFormatting:
     def test_format_subject_includes_requester(self):
         """Test subject includes requester name."""
         provider = SendGridMessageProvider()
-        
+
         subject = provider._format_subject("Alice")
         assert "Alice" in subject

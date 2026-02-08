@@ -4,7 +4,6 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
     DateTime,
     Enum,
     Index,
@@ -70,7 +69,10 @@ class ConsentRequestModel(Base):
     )
     status: Mapped[str] = mapped_column(
         Enum(
-            "pending", "granted", "revoked", "expired",
+            "pending",
+            "granted",
+            "revoked",
+            "expired",
             name="consent_status_enum",
             create_constraint=True,
         ),

@@ -1,27 +1,31 @@
 """Domain services for consent management."""
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
 
+from consent_mcp.config import settings
 from consent_mcp.domain.entities import ConsentRequest
-from consent_mcp.domain.value_objects import ContactInfo, ContactType, ConsentStatus
-from consent_mcp.domain.repository import IConsentRepository, DuplicateRequestError
 from consent_mcp.domain.providers import (
     IMessageProvider,
-    ProviderType,
     ProviderNotConfiguredError,
+)
+from consent_mcp.domain.repository import IConsentRepository
+from consent_mcp.domain.value_objects import (
+    ConsentActionResult,
+    ConsentStatus,
+    ContactInfo,
+    ContactType,
 )
 
 
 class ConsentService:
     """
     Core domain service for consent management.
-    
+
     This service orchestrates the consent workflow:
     1. Request consent from a target
     2. Check if consent exists
     3. Grant or revoke consent
-    
+
     All business logic lives here, independent of infrastructure.
     """
 
@@ -33,7 +37,7 @@ class ConsentService:
     ):
         """
         Initialize the consent service.
-        
+
         Args:
             repository: Data access for consent requests.
             sms_provider: Provider for sending SMS messages.
@@ -60,6 +64,13 @@ class ConsentService:
         else:
             raise ValueError(f"Unknown contact type: {contact_type}")
 
+    def _generate_consent_url(self, request_id: str) -> str | None:
+        """Generate a consent URL for the request if base URL is configured."""
+        if not settings.consent_base_url:
+            return None
+        base = settings.consent_base_url.rstrip("/")
+        return f"{base}/v1/consent/{request_id}"
+
     async def request_consent(
         self,
         requester: ContactInfo,
@@ -69,13 +80,13 @@ class ConsentService:
     ) -> dict:
         """
         Request consent from a target on behalf of a requester.
-        
+
         Args:
             requester: Contact info of who is requesting consent.
             target: Contact info of who is being asked.
             scope: What the consent is for.
             expires_in_days: How many days until consent expires.
-            
+
         Returns:
             Dict with request_id, status, and message.
         """
@@ -119,6 +130,9 @@ class ConsentService:
         # Save to repository
         saved_request = await self._repository.create(consent_request)
 
+        # Generate consent URL for click-to-consent
+        consent_url = self._generate_consent_url(str(saved_request.id))
+
         # Send consent request message
         provider = self._get_provider(target.contact_type)
         delivery_result = await provider.send_consent_request(
@@ -126,9 +140,10 @@ class ConsentService:
             requester_name=requester.name or "Someone",
             target_name=target.name,
             scope=scope,
+            consent_url=consent_url,
         )
 
-        return {
+        result = {
             "request_id": str(saved_request.id),
             "status": "pending",
             "message": f"Consent request sent via {provider.provider_name}",
@@ -140,6 +155,11 @@ class ConsentService:
             },
         }
 
+        if consent_url:
+            result["consent_url"] = consent_url
+
+        return result
+
     async def check_consent(
         self,
         requester: ContactInfo,
@@ -148,15 +168,15 @@ class ConsentService:
     ) -> bool:
         """
         Check if requester has active consent to contact target.
-        
+
         This is the BLOCKING check that AI agents must pass.
         Returns True ONLY if consent is GRANTED and not expired.
-        
+
         Args:
             requester: Contact info of the requester.
             target: Contact info of the target.
             scope: Optional scope to check. If None, checks for any consent.
-            
+
         Returns:
             True if active consent exists, False otherwise.
         """
@@ -175,28 +195,29 @@ class ConsentService:
     ) -> dict:
         """
         Simulate a consent response for testing.
-        
+
         Args:
             target: Contact info of the target.
             requester_contact_value: The requester's contact value.
             response: "YES" to grant, "NO" or "REVOKE" to revoke.
-            
+
         Returns:
             Dict with success status and new status.
         """
         # Find the pending request
         # We need to construct requester ContactInfo
-        requester = ContactInfo(
+        ContactInfo(
             contact_type=target.contact_type,  # Assume same type
             contact_value=requester_contact_value,
         )
 
         # Find requests from this requester to this target
         requests = await self._repository.find_by_target(target)
-        
+
         # Filter to find matching requester
         matching = [
-            r for r in requests
+            r
+            for r in requests
             if r.requester.contact_value == requester_contact_value
             and r.status == ConsentStatus.PENDING
         ]
@@ -212,7 +233,7 @@ class ConsentService:
         response_upper = response.upper()
 
         if response_upper == "YES":
-            updated = await self._repository.update_status(
+            await self._repository.update_status(
                 request.id,
                 ConsentStatus.GRANTED,
             )
@@ -222,7 +243,7 @@ class ConsentService:
                 "message": "Consent granted",
             }
         elif response_upper in ("NO", "REVOKE"):
-            updated = await self._repository.update_status(
+            await self._repository.update_status(
                 request.id,
                 ConsentStatus.REVOKED,
             )
@@ -246,12 +267,12 @@ class ConsentService:
     ) -> list[dict]:
         """
         List consent requests with optional filters.
-        
+
         Args:
             target: Filter by target.
             requester: Filter by requester.
             status: Filter by status.
-            
+
         Returns:
             List of consent request summaries.
         """
@@ -283,3 +304,84 @@ class ConsentService:
             }
             for r in requests
         ]
+
+    # -------------------------------------------------------------------------
+    # Web consent flow methods
+    # -------------------------------------------------------------------------
+
+    async def get_request_by_id(self, request_id) -> ConsentRequest | None:
+        """
+        Get a consent request by its ID.
+
+        Args:
+            request_id: UUID of the consent request.
+
+        Returns:
+            ConsentRequest if found, None otherwise.
+        """
+        return await self._repository.get_by_id(request_id)
+
+    async def grant_consent(self, request_id) -> "ConsentActionResult":
+        """
+        Grant consent for a pending request.
+
+        Args:
+            request_id: UUID of the consent request.
+
+        Returns:
+            ConsentActionResult with success status and new status.
+        """
+        consent_request = await self._repository.get_by_id(request_id)
+        if not consent_request:
+            return ConsentActionResult(
+                success=False,
+                new_status=None,
+                message="Consent request not found",
+            )
+
+        if consent_request.status != ConsentStatus.PENDING:
+            return ConsentActionResult(
+                success=False,
+                new_status=consent_request.status,
+                message=f"Request already {consent_request.status.value}",
+            )
+
+        await self._repository.update_status(request_id, ConsentStatus.GRANTED)
+        return ConsentActionResult(
+            success=True,
+            new_status=ConsentStatus.GRANTED,
+            message="Consent granted",
+        )
+
+    async def deny_consent(self, request_id) -> "ConsentActionResult":
+        """
+        Deny consent for a pending request.
+
+        Args:
+            request_id: UUID of the consent request.
+
+        Returns:
+            ConsentActionResult with success status and new status.
+        """
+        consent_request = await self._repository.get_by_id(request_id)
+        if not consent_request:
+            return ConsentActionResult(
+                success=False,
+                new_status=None,
+                message="Consent request not found",
+            )
+
+        if consent_request.status != ConsentStatus.PENDING:
+            return ConsentActionResult(
+                success=False,
+                new_status=consent_request.status,
+                message=f"Request already {consent_request.status.value}",
+            )
+
+        await self._repository.update_status(request_id, ConsentStatus.REVOKED)
+        return ConsentActionResult(
+            success=True,
+            new_status=ConsentStatus.REVOKED,
+            message="Consent denied",
+        )
+

@@ -8,14 +8,14 @@ from consent_mcp.domain.auth import AuthContext, IAuthProvider
 class ApiKeyAuthProvider(IAuthProvider):
     """
     Simple API key authentication.
-    
+
     Keys are mapped to client IDs. Each key authenticates as a specific client.
     """
 
     def __init__(self, api_keys: dict[str, str]):
         """
         Initialize with API keys.
-        
+
         Args:
             api_keys: Mapping of API key -> client_id.
         """
@@ -29,14 +29,14 @@ class ApiKeyAuthProvider(IAuthProvider):
     def extract_credentials(self, request: dict[str, Any]) -> dict[str, Any]:
         """
         Extract API key from request.
-        
+
         Looks for the API key in:
         1. request._meta.api_key
         2. request.params._meta.api_key (for tool calls)
-        
+
         Args:
             request: The MCP request dictionary.
-            
+
         Returns:
             Dict with extracted api_key if found.
         """
@@ -63,10 +63,10 @@ class ApiKeyAuthProvider(IAuthProvider):
     async def authenticate(self, credentials: dict[str, Any]) -> AuthContext | None:
         """
         Authenticate using API key.
-        
+
         Args:
             credentials: Dict containing 'api_key'.
-            
+
         Returns:
             AuthContext if valid key, None otherwise.
         """

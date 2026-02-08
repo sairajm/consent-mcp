@@ -9,7 +9,7 @@ from consent_mcp.infrastructure.auth.oauth import OAuthProvider
 class NoAuthProvider(IAuthProvider):
     """
     No-op authentication provider for testing.
-    
+
     WARNING: Only use this in test environments!
     """
 
@@ -17,10 +17,10 @@ class NoAuthProvider(IAuthProvider):
     def provider_name(self) -> str:
         return "none"
 
-    def extract_credentials(self, request: dict) -> dict:
+    def extract_credentials(self, _request: dict) -> dict:
         return {}
 
-    async def authenticate(self, credentials: dict) -> AuthContext | None:
+    async def authenticate(self, _credentials: dict) -> AuthContext | None:
         # Always authenticate with a test context
         return AuthContext(
             client_id="test_client",
@@ -33,10 +33,10 @@ class NoAuthProvider(IAuthProvider):
 def get_auth_provider() -> IAuthProvider:
     """
     Get the configured authentication provider.
-    
+
     Returns:
         The configured IAuthProvider instance.
-        
+
     Raises:
         ValueError: If auth configuration is invalid.
     """
@@ -54,16 +54,13 @@ def get_auth_provider() -> IAuthProvider:
         api_keys = settings.parse_api_keys()
         if not api_keys and settings.is_production:
             raise ValueError(
-                "API_KEYS must be configured in production. "
-                "Set API_KEYS=key1:client1,key2:client2"
+                "API_KEYS must be configured in production. Set API_KEYS=key1:client1,key2:client2"
             )
         return ApiKeyAuthProvider(api_keys)
 
     elif provider_type == "oauth":
         if not settings.oauth_issuer_url or not settings.oauth_audience:
-            raise ValueError(
-                "OAuth requires OAUTH_ISSUER_URL and OAUTH_AUDIENCE to be set."
-            )
+            raise ValueError("OAuth requires OAUTH_ISSUER_URL and OAUTH_AUDIENCE to be set.")
         return OAuthProvider(
             issuer_url=settings.oauth_issuer_url,
             audience=settings.oauth_audience,

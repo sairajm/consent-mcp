@@ -25,7 +25,7 @@ class MessageDeliveryResult(BaseModel):
 class IMessageProvider(ABC):
     """
     Interface for sending consent request messages.
-    
+
     Implement this interface to add new messaging providers
     (e.g., WhatsApp, push notifications, etc.).
     """
@@ -53,14 +53,14 @@ class IMessageProvider(ABC):
     ) -> MessageDeliveryResult:
         """
         Send a consent request message to the target.
-        
+
         Args:
             target_contact: Phone number or email address of target.
             requester_name: Display name of the requester.
             target_name: Display name of the target (if known).
             scope: Description of what consent is for.
             consent_url: Optional URL for target to click to grant consent.
-            
+
         Returns:
             MessageDeliveryResult with success status and details.
         """
@@ -70,10 +70,10 @@ class IMessageProvider(ABC):
     async def validate_contact(self, contact_value: str) -> bool:
         """
         Validate the contact format.
-        
+
         Args:
             contact_value: Phone number or email to validate.
-            
+
         Returns:
             True if valid, False otherwise.
         """
@@ -83,7 +83,7 @@ class IMessageProvider(ABC):
     def is_configured(self) -> bool:
         """
         Check if the provider is properly configured.
-        
+
         Returns:
             True if all required credentials are set.
         """

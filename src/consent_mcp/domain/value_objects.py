@@ -1,9 +1,10 @@
 """Value objects for the consent domain."""
 
 import re
+from dataclasses import dataclass
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, model_validator
 
 
 class ContactType(str, Enum):
@@ -29,7 +30,7 @@ E164_PATTERN = re.compile(r"^\+[1-9]\d{1,14}$")
 class ContactInfo(BaseModel):
     """
     Immutable value object representing contact information.
-    
+
     Validates phone numbers are in E.164 format and emails are valid.
     """
 
@@ -46,10 +47,11 @@ class ContactInfo(BaseModel):
                     f"Phone number must be in E.164 format (e.g., +15551234567), "
                     f"got: {self.contact_value}"
                 )
-        elif self.contact_type == ContactType.EMAIL:
+        elif self.contact_type == ContactType.EMAIL and (
+            "@" not in self.contact_value or "." not in self.contact_value
+        ):
             # Basic email validation
-            if "@" not in self.contact_value or "." not in self.contact_value:
-                raise ValueError(f"Invalid email address: {self.contact_value}")
+            raise ValueError(f"Invalid email address: {self.contact_value}")
         return self
 
     def __hash__(self) -> int:
@@ -60,10 +62,7 @@ class ContactInfo(BaseModel):
         """Check equality based on type and value."""
         if not isinstance(other, ContactInfo):
             return False
-        return (
-            self.contact_type == other.contact_type
-            and self.contact_value == other.contact_value
-        )
+        return self.contact_type == other.contact_type and self.contact_value == other.contact_value
 
     class Config:
         frozen = True  # Make immutable
@@ -72,9 +71,7 @@ class ContactInfo(BaseModel):
 def validate_phone(phone: str) -> str:
     """Validate and return phone number in E.164 format."""
     if not E164_PATTERN.match(phone):
-        raise ValueError(
-            f"Phone number must be in E.164 format (e.g., +15551234567), got: {phone}"
-        )
+        raise ValueError(f"Phone number must be in E.164 format (e.g., +15551234567), got: {phone}")
     return phone
 
 
@@ -83,3 +80,16 @@ def validate_email(email: str) -> str:
     if "@" not in email or "." not in email:
         raise ValueError(f"Invalid email address: {email}")
     return email
+
+
+@dataclass(frozen=True)
+class ConsentActionResult:
+    """
+    Result of a consent action (grant/deny).
+
+    This is a domain value object representing the outcome of consent operations.
+    """
+
+    success: bool
+    new_status: ConsentStatus | None
+    message: str

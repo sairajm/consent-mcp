@@ -1,19 +1,17 @@
 """Test configuration and fixtures."""
 
 import asyncio
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from consent_mcp.config import Settings
-from consent_mcp.domain.entities import ConsentRequest
-from consent_mcp.domain.value_objects import ContactInfo, ContactType, ConsentStatus
+from consent_mcp.domain.auth import AuthContext, IAuthProvider
 from consent_mcp.domain.providers import IMessageProvider, MessageDeliveryResult, ProviderType
-from consent_mcp.domain.auth import IAuthProvider, AuthContext
 from consent_mcp.domain.services import ConsentService
+from consent_mcp.domain.value_objects import ContactInfo, ContactType
 from consent_mcp.infrastructure.database.models import Base
 from consent_mcp.infrastructure.database.repository import PostgresConsentRepository
 
@@ -53,17 +51,17 @@ async def async_engine(test_settings):
         test_settings.database_url,
         echo=False,
     )
-    
+
     # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Drop tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    
+
     await engine.dispose()
 
 
@@ -75,7 +73,7 @@ async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
         class_=AsyncSession,
         expire_on_commit=False,
     )
-    
+
     async with session_factory() as session:
         yield session
         await session.rollback()
@@ -146,9 +144,7 @@ def mock_auth_provider() -> IAuthProvider:
 # Service fixture
 # ============================================
 @pytest.fixture
-async def consent_service(
-    repository, mock_sms_provider, mock_email_provider
-) -> ConsentService:
+async def consent_service(repository, mock_sms_provider, mock_email_provider) -> ConsentService:
     """Create consent service with mocked providers."""
     return ConsentService(
         repository=repository,

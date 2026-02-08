@@ -9,7 +9,7 @@ from pydantic import BaseModel
 class AuthContext(BaseModel):
     """
     Information about an authenticated caller.
-    
+
     This is passed to domain services for audit logging and
     authorization decisions.
     """
@@ -27,7 +27,7 @@ class AuthContext(BaseModel):
 class IAuthProvider(ABC):
     """
     Interface for authentication providers.
-    
+
     Implement this interface to add custom authentication mechanisms
     (e.g., API keys, OAuth, SAML, custom tokens, etc.).
     """
@@ -42,11 +42,11 @@ class IAuthProvider(ABC):
     async def authenticate(self, credentials: dict[str, Any]) -> AuthContext | None:
         """
         Authenticate the request.
-        
+
         Args:
             credentials: Dictionary containing authentication information
                 extracted from the request.
-                
+
         Returns:
             AuthContext if authentication succeeds, None if it fails.
         """
@@ -56,10 +56,10 @@ class IAuthProvider(ABC):
     def extract_credentials(self, request: dict[str, Any]) -> dict[str, Any]:
         """
         Extract credentials from an MCP request.
-        
+
         Args:
             request: The raw MCP request dictionary.
-            
+
         Returns:
             Dictionary of credentials to pass to authenticate().
         """

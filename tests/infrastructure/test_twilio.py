@@ -1,10 +1,11 @@
 """Tests for TwilioMessageProvider."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from consent_mcp.domain.providers import ProviderType
 from consent_mcp.infrastructure.providers.twilio import TwilioMessageProvider
-from consent_mcp.domain.providers import ProviderType, ProviderNotConfiguredError
 
 
 class TestTwilioProviderConfiguration:
@@ -181,7 +182,7 @@ class TestTwilioMessageFormatting:
     def test_format_message_includes_requester(self):
         """Test message format includes requester name."""
         provider = TwilioMessageProvider()
-        
+
         message = provider._format_message(
             requester_name="Alice",
             target_name="Bob",
@@ -193,7 +194,7 @@ class TestTwilioMessageFormatting:
     def test_format_message_includes_scope(self):
         """Test message format includes scope."""
         provider = TwilioMessageProvider()
-        
+
         message = provider._format_message(
             requester_name="Alice",
             target_name="Bob",
@@ -205,7 +206,7 @@ class TestTwilioMessageFormatting:
     def test_format_message_includes_target_name(self):
         """Test message format includes target name."""
         provider = TwilioMessageProvider()
-        
+
         message = provider._format_message(
             requester_name="Alice",
             target_name="Bob",
@@ -217,7 +218,7 @@ class TestTwilioMessageFormatting:
     def test_format_message_handles_no_target_name(self):
         """Test message format handles missing target name."""
         provider = TwilioMessageProvider()
-        
+
         message = provider._format_message(
             requester_name="Alice",
             target_name=None,
